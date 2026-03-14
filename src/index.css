@@ -1,25 +1,64 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@font-face {
+  font-family: 'Gotham';
+  src: url('./assets/fonts/GothamSSm-Book_Web.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gotham';
+  src: url('./assets/fonts/GothamSSm-Bold_Web.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gotham';
+  src: url('./assets/fonts/GothamSSm-Black_Web.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gotham';
+  src: url('./assets/fonts/GothamSSm-Medium_Web.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gotham';
+  src: url('./assets/fonts/GothamSSm-Light_Web.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
 
 @theme {
-  --color-background: #0f1117;
-  --color-card: #1a1d27;
-  --color-card-hover: #222636;
-  --color-border: #2a2e3d;
+  --color-background: #1a1a1a;
+  --color-card: #242424;
+  --color-card-hover: #2e2e2e;
+  --color-border: rgba(220, 220, 220, 0.12);
   --color-text-primary: #e8eaed;
-  --color-text-secondary: #9aa0b0;
+  --color-text-secondary: #97a3ae;
   --color-text-muted: #666c80;
-  --color-accent-blue: #4e8cff;
+  --color-accent-red: #dc291e;
+  --color-accent-teal: #00b2a9;
   --color-accent-green: #34d399;
-  --color-accent-red: #f87171;
   --color-accent-amber: #fbbf24;
-  --color-accent-purple: #a78bfa;
-  --color-accent-cyan: #22d3ee;
-  --color-accent-pink: #f472b6;
-  --color-accent-indigo: #818cf8;
+  --color-smokey: #4c4d4f;
+  --color-sidebar: #141414;
 }
 
 body {
-  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Gotham Book', 'Gotham', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--color-background);
   color: var(--color-text-primary);
   margin: 0;
@@ -31,17 +70,32 @@ body {
   min-height: 100vh;
 }
 
+/* Utility font classes */
+.font-display {
+  font-family: 'Gotham', sans-serif;
+  font-weight: 900;
+}
+
+.font-heading {
+  font-family: 'Gotham', sans-serif;
+  font-weight: 700;
+}
+
+.font-mono-data {
+  font-family: 'JetBrains Mono', monospace;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--color-border); }
 
 /* Recharts overrides */
 .recharts-tooltip-wrapper { outline: none !important; }
 .recharts-default-tooltip {
   background: var(--color-card) !important;
   border: 1px solid var(--color-border) !important;
-  border-radius: 8px !important;
+  border-radius: 2px !important;
   padding: 10px 14px !important;
 }
 .recharts-tooltip-label { color: var(--color-text-primary) !important; font-weight: 600 !important; margin-bottom: 4px !important; }

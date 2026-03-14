@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { StatusBar } from './components/ui/StatusBar'
+import { Sidebar } from './components/ui/Sidebar'
 import { FlowCutsTab } from './components/dashboard/FlowCutsTab'
 import { FinalShortsTab } from './components/dashboard/FinalShortsTab'
 import { useExcelData } from './hooks/useExcelData'
@@ -17,7 +18,7 @@ export default function App() {
     sendData(fcData, shData)
   }, [fcData, shData, sendData])
 
-  const tabs: { id: TabId; label: string }[] = []
+  const tabs: { id: string; label: string }[] = []
   if (fcData) tabs.push({ id: 'fc', label: 'Flow Cuts' })
   if (shData) tabs.push({ id: 'sh', label: 'Final Shorts' })
 
@@ -34,7 +35,7 @@ export default function App() {
       />
 
       {error && (
-        <div className="mx-4 mt-3 p-3 rounded-lg bg-accent-red/10 border border-accent-red/30 text-accent-red text-xs">
+        <div className="mx-4 mt-3 p-3 rounded-none bg-accent-red/10 border border-accent-red/30 text-accent-red text-xs">
           {error}
         </div>
       )}
@@ -42,33 +43,19 @@ export default function App() {
       {!hasData && !error && (
         <div className="text-center py-16 px-5">
           <div className="text-4xl mb-3 opacity-60">📊</div>
-          <h2 className="text-lg font-semibold mb-2">Connecting to Excel...</h2>
+          <h2 className="text-lg font-heading mb-2">Connecting to Excel...</h2>
           <p className="text-text-secondary text-sm">The dashboard will load automatically once Office.js initializes.</p>
         </div>
       )}
 
       {hasData && (
         <>
-          {/* Tab Bar */}
-          <div role="tablist" className="flex flex-wrap gap-1 px-5 py-2 bg-card border-b border-border no-print">
-            {tabs.map(t => (
-              <button
-                key={t.id}
-                role="tab"
-                aria-selected={activeTab === t.id}
-                onClick={() => setActiveTab(t.id)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors border ${
-                  activeTab === t.id
-                    ? 'text-accent-blue bg-accent-blue/10 border-accent-blue/30'
-                    : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-card-hover'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Content */}
+          <Sidebar
+            activeTab={activeTab}
+            onTabChange={(id) => setActiveTab(id as TabId)}
+            tabs={tabs}
+            isTaskPane={true}
+          />
           <div role="tabpanel" className="p-4">
             {activeTab === 'fc' && fcData && <FlowCutsTab data={fcData} />}
             {activeTab === 'sh' && shData && <FinalShortsTab data={shData} />}

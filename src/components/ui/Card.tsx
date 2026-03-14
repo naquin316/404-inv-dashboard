@@ -10,16 +10,18 @@ interface CardProps {
 
 export function Card({ title, badge, children, className }: CardProps) {
   return (
-    <div className={cn('rounded-xl border border-border bg-card p-4', className)}>
-      <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-text-primary">
-        {title}
+    <div className={cn('rounded-none border border-border bg-card', className)}>
+      <div className="-mx-px -mt-px bg-accent-teal px-4 py-2 flex items-center gap-2">
+        <span className="text-xs font-heading uppercase tracking-wider text-white">{title}</span>
         {badge && (
-          <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-accent-blue/15 text-accent-blue">
+          <span className="text-[10px] font-medium px-2 py-0.5 bg-black/30 text-white">
             {badge}
           </span>
         )}
       </div>
-      {children}
+      <div className="p-4">
+        {children}
+      </div>
     </div>
   )
 }

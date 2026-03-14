@@ -14,7 +14,7 @@ const CHART_TICK_SM = { fill: 'var(--color-text-secondary)', fontSize: 9 }
 const CHART_TOOLTIP_STYLE = {
   background: 'var(--color-card)',
   border: '1px solid var(--color-border)',
-  borderRadius: 8,
+  borderRadius: 2,
   fontSize: 12,
 }
 
@@ -77,7 +77,7 @@ export function FinalShortsTab({ data, wide = false }: Props) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <KpiCard label="Total Shorts" value={fmtN(totalShorts)} color="red" />
         <KpiCard label="Total Cost" value={fmt$(totalCost)} color="amber" />
-        <KpiCard label="Records" value={fmtN(data.length)} color="blue" />
+        <KpiCard label="Records" value={fmtN(data.length)} color="teal" />
         <KpiCard label="Teams" value={fmtN(Object.keys(byTeam).length)} color="green" />
       </div>
 
@@ -93,7 +93,7 @@ export function FinalShortsTab({ data, wide = false }: Props) {
                 contentStyle={CHART_TOOLTIP_STYLE}
                 formatter={(v: any) => [fmt$(Number(v)), 'Cost']}
               />
-              <Bar dataKey="cost" fill="#fbbf2480" stroke="#fbbf24" strokeWidth={1} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="cost" fill="#00b2a960" stroke="#00b2a9" strokeWidth={1} />
             </BarChart>
           </ResponsiveContainer>
         </Card>
@@ -108,7 +108,7 @@ export function FinalShortsTab({ data, wide = false }: Props) {
                 contentStyle={CHART_TOOLTIP_STYLE}
                 formatter={(v: any) => [fmtN(Number(v)), 'Shorts']}
               />
-              <Bar dataKey="shorts" fill="#a78bfa80" stroke="#a78bfa" strokeWidth={1} radius={[0, 4, 4, 0]} />
+              <Bar dataKey="shorts" fill="#00b2a960" stroke="#00b2a9" strokeWidth={1} />
             </BarChart>
           </ResponsiveContainer>
         </Card>
@@ -122,14 +122,14 @@ export function FinalShortsTab({ data, wide = false }: Props) {
           aria-label="Search records"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs text-text-primary outline-none mb-2 focus:border-accent-blue transition-colors no-print"
+          className="w-full bg-background border border-border rounded-none px-3 py-2 text-xs text-text-primary outline-none mb-2 focus:border-accent-teal transition-colors no-print"
         />
         <div className="overflow-auto max-h-[500px]">
           <table className="w-full text-[11px]" aria-label="Final Short Records">
             <thead>
               <tr>
                 {['Date', 'Product', 'Description', 'Partner', 'Shorts', 'Cost', 'Team'].map(h => (
-                  <th key={h} className="sticky top-0 bg-card-hover text-left p-2 text-[9px] font-semibold uppercase tracking-wider text-text-secondary border-b border-border whitespace-nowrap">
+                  <th key={h} className="sticky top-0 bg-smokey text-left p-2 text-[9px] font-semibold uppercase tracking-wider text-text-secondary border-b border-border whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -138,12 +138,12 @@ export function FinalShortsTab({ data, wide = false }: Props) {
             <tbody>
               {filteredData.map((r, i) => (
                 <tr key={i} className="border-b border-border/40 hover:bg-card-hover transition-colors">
-                  <td className="p-2 whitespace-nowrap">{fmtDate(r['RPT_DT'])}</td>
-                  <td className="p-2 whitespace-nowrap">{String(r['PRODUCT'] || '')}</td>
+                  <td className="p-2 whitespace-nowrap font-mono-data">{fmtDate(r['RPT_DT'])}</td>
+                  <td className="p-2 whitespace-nowrap font-mono-data">{String(r['PRODUCT'] || '')}</td>
                   <td className="p-2 max-w-[200px] truncate">{String(r['DESCRIPTION'] || '')}</td>
                   <td className="p-2 whitespace-nowrap">{String(r['PARTNER'] || '')}</td>
-                  <td className="p-2 text-right tabular-nums">{Number(r['FINAL_SHORTS']) || 0}</td>
-                  <td className="p-2 text-right tabular-nums">{fmt$(Number(r['COST']) || 0)}</td>
+                  <td className="p-2 text-right font-mono-data tabular-nums">{Number(r['FINAL_SHORTS']) || 0}</td>
+                  <td className="p-2 text-right font-mono-data tabular-nums">{fmt$(Number(r['COST']) || 0)}</td>
                   <td className="p-2 whitespace-nowrap">{String(r['JobTitle'] || '').replace('SM RSC ', '')}</td>
                 </tr>
               ))}

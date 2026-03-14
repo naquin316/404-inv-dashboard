@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Source font archives (proprietary — bundled copies live in src/assets/fonts/)
+/Fonts/
