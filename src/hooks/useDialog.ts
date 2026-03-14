@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback } from 'react'
-import type { FlowCutsData, ShortRecord } from '../types'
 
 declare const Office: any
 
@@ -8,18 +7,18 @@ export function useDialog(loadAllData: () => Promise<void>) {
   const dialogRef = useRef<any>(null)
   const readyRef = useRef(false)
 
-  const sendData = useCallback((fcData: FlowCutsData | null, shData: ShortRecord[] | null) => {
+  const sendData = useCallback((data: Record<string, any>) => {
     if (!dialogRef.current || !readyRef.current) return
     try {
-      dialogRef.current.messageChild(JSON.stringify({ type: 'data', fcData, shData }))
+      dialogRef.current.messageChild(JSON.stringify({ type: 'data', data }))
     } catch (e) {
       console.warn('Failed to send data to dialog:', e)
     }
   }, [])
 
-  const openDialog = useCallback((fcData: FlowCutsData | null, shData: ShortRecord[] | null) => {
+  const openDialog = useCallback((data: Record<string, any>) => {
     if (dialogRef.current) {
-      sendData(fcData, shData)
+      sendData(data)
       return
     }
     const origin = window.location.origin
@@ -39,7 +38,7 @@ export function useDialog(loadAllData: () => Promise<void>) {
             const msg = JSON.parse(arg.message)
             if (msg.type === 'ready') {
               readyRef.current = true
-              sendData(fcData, shData)
+              sendData(data)
             } else if (msg.type === 'refresh') {
               loadAllData()
             }

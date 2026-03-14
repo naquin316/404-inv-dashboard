@@ -1,67 +1,97 @@
 import { useState, useEffect } from 'react'
 import { StatusBar } from './components/ui/StatusBar'
 import { Sidebar } from './components/ui/Sidebar'
-import { FlowCutsTab } from './components/dashboard/FlowCutsTab'
-import { FinalShortsTab } from './components/dashboard/FinalShortsTab'
+import { LandingPage } from './components/LandingPage'
+import { useWorkbookDetection } from './hooks/useWorkbookDetection'
 import { useExcelData } from './hooks/useExcelData'
 import { useDialog } from './hooks/useDialog'
 
-type TabId = 'fc' | 'sh'
-
 export default function App() {
-  const { fcData, shData, status, error, isReady, loadAllData } = useExcelData()
+  const detection = useWorkbookDetection()
+  const { data, status, error, loadAllData } = useExcelData(detection.availablePages)
   const { openDialog, sendData } = useDialog(loadAllData)
-  const [activeTab, setActiveTab] = useState<TabId>('fc')
+  const [activePageId, setActivePageId] = useState('')
+
+  // Set initial active page when detection completes
+  useEffect(() => {
+    if (detection.availablePages.length > 0 && !activePageId) {
+      setActivePageId(detection.availablePages[0].id)
+    }
+  }, [detection.availablePages, activePageId])
 
   // Send updated data to dialog whenever data changes
   useEffect(() => {
-    sendData(fcData, shData)
-  }, [fcData, shData, sendData])
+    sendData(data)
+  }, [data, sendData])
 
-  const tabs: { id: string; label: string }[] = []
-  if (fcData) tabs.push({ id: 'fc', label: 'Flow Cuts' })
-  if (shData) tabs.push({ id: 'sh', label: 'Final Shorts' })
+  const activePage = detection.availablePages.find(p => p.id === activePageId)
+  const hasData = Object.values(data).some(v => v != null)
+  const combinedError = detection.error || error
 
-  const hasData = fcData || shData
+  // No workbook matched
+  if (detection.isReady && !detection.workbook) {
+    return (
+      <div className="min-h-screen">
+        <StatusBar
+          status={{ state: 'waiting', text: 'No workbook detected' }}
+          onRefresh={() => window.location.reload()}
+          isReady={false}
+          isTaskPane={true}
+        />
+        <LandingPage sheetNames={detection.allSheetNames} />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen">
-      <StatusBar
-        status={status}
-        onRefresh={loadAllData}
-        onPopOut={() => openDialog(fcData, shData)}
-        isReady={isReady}
-        isTaskPane={true}
-      />
-
-      {error && (
-        <div className="mx-4 mt-3 p-3 rounded-none bg-accent-red/10 border border-accent-red/30 text-accent-red text-xs">
-          {error}
-        </div>
+      {detection.workbook && hasData && (
+        <Sidebar
+          workbook={detection.workbook}
+          pages={detection.availablePages}
+          activePageId={activePageId}
+          onPageChange={setActivePageId}
+          isTaskPane={true}
+        />
       )}
 
-      {!hasData && !error && (
-        <div className="text-center py-16 px-5">
-          <div className="text-4xl mb-3 opacity-60">📊</div>
-          <h2 className="text-lg font-heading mb-2">Connecting to Excel...</h2>
-          <p className="text-text-secondary text-sm">The dashboard will load automatically once Office.js initializes.</p>
-        </div>
-      )}
+      <div className={hasData && detection.workbook ? 'ml-10' : ''}>
+        <StatusBar
+          status={detection.isReady ? status : { state: 'waiting', text: 'Detecting workbook...' }}
+          onRefresh={loadAllData}
+          onPopOut={() => openDialog(data)}
+          isReady={detection.isReady && hasData}
+          isTaskPane={true}
+        />
 
-      {hasData && (
-        <>
-          <Sidebar
-            activeTab={activeTab}
-            onTabChange={(id) => setActiveTab(id as TabId)}
-            tabs={tabs}
-            isTaskPane={true}
-          />
-          <div role="tabpanel" className="p-4">
-            {activeTab === 'fc' && fcData && <FlowCutsTab data={fcData} />}
-            {activeTab === 'sh' && shData && <FinalShortsTab data={shData} />}
+        {combinedError && (
+          <div className="mx-4 mt-3 p-3 rounded-none bg-accent-red/10 border border-accent-red/30 text-accent-red text-xs">
+            {combinedError}
           </div>
-        </>
-      )}
+        )}
+
+        {!hasData && !combinedError && detection.isReady && (
+          <div className="text-center py-16 px-5">
+            <div className="text-4xl mb-3 opacity-60">📊</div>
+            <h2 className="text-lg font-heading mb-2">Loading data...</h2>
+            <p className="text-text-secondary text-sm">Reading sheets from the workbook.</p>
+          </div>
+        )}
+
+        {!detection.isReady && !combinedError && (
+          <div className="text-center py-16 px-5">
+            <div className="text-4xl mb-3 opacity-60">📊</div>
+            <h2 className="text-lg font-heading mb-2">Connecting to Excel...</h2>
+            <p className="text-text-secondary text-sm">The dashboard will load automatically once Office.js initializes.</p>
+          </div>
+        )}
+
+        {hasData && activePage && (
+          <div role="tabpanel" className="p-4">
+            <activePage.component data={data[activePageId]} />
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -1,19 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { StatusBar } from './components/ui/StatusBar'
 import { Sidebar } from './components/ui/Sidebar'
-import { FlowCutsTab } from './components/dashboard/FlowCutsTab'
-import { FinalShortsTab } from './components/dashboard/FinalShortsTab'
-import type { FlowCutsData, ShortRecord, StatusState } from './types'
+import { workbookRegistry } from './config/registry'
+import type { StatusState } from './types'
 
 declare const Office: any
 
-type TabId = 'fc' | 'sh'
-
 export default function DialogApp() {
-  const [fcData, setFcData] = useState<FlowCutsData | null>(null)
-  const [shData, setShData] = useState<ShortRecord[] | null>(null)
+  const [data, setData] = useState<Record<string, any>>({})
   const [status, setStatus] = useState<{ state: StatusState; text: string }>({ state: 'waiting', text: 'Waiting for data...' })
-  const [activeTab, setActiveTab] = useState<TabId>('fc')
+  const [activePageId, setActivePageId] = useState('')
 
   const requestRefresh = useCallback(() => {
     setStatus({ state: 'loading', text: 'Requesting refresh...' })
@@ -34,8 +30,7 @@ export default function DialogApp() {
           try {
             const msg = JSON.parse(arg.message)
             if (msg.type === 'data') {
-              setFcData(msg.fcData)
-              setShData(msg.shData)
+              setData(msg.data)
               setStatus({ state: 'ok', text: 'Updated ' + new Date().toLocaleTimeString() })
             }
           } catch (e) {
@@ -47,19 +42,33 @@ export default function DialogApp() {
     })
   }, [])
 
-  const tabs: { id: string; label: string }[] = []
-  if (fcData) tabs.push({ id: 'fc', label: 'Flow Cuts' })
-  if (shData) tabs.push({ id: 'sh', label: 'Final Shorts' })
+  // Detect which workbook based on data keys
+  const detectedWorkbook = workbookRegistry.find(wb =>
+    wb.pages.some(p => data[p.id] != null)
+  ) ?? null
 
-  const hasData = fcData || shData
+  const availablePages = detectedWorkbook
+    ? detectedWorkbook.pages.filter(p => data[p.id] != null)
+    : []
+
+  // Set initial active page
+  useEffect(() => {
+    if (availablePages.length > 0 && !activePageId) {
+      setActivePageId(availablePages[0].id)
+    }
+  }, [availablePages, activePageId])
+
+  const activePage = availablePages.find(p => p.id === activePageId)
+  const hasData = Object.values(data).some(v => v != null)
 
   return (
     <div className="min-h-screen flex">
-      {hasData && (
+      {hasData && detectedWorkbook && (
         <Sidebar
-          activeTab={activeTab}
-          onTabChange={(id) => setActiveTab(id as TabId)}
-          tabs={tabs}
+          workbook={detectedWorkbook}
+          pages={availablePages}
+          activePageId={activePageId}
+          onPageChange={setActivePageId}
           isTaskPane={false}
         />
       )}
@@ -68,7 +77,7 @@ export default function DialogApp() {
           status={status}
           onRefresh={requestRefresh}
           onPrint={hasData ? printDashboard : undefined}
-          isReady={!!hasData}
+          isReady={hasData}
           isTaskPane={false}
         />
 
@@ -80,10 +89,9 @@ export default function DialogApp() {
           </div>
         )}
 
-        {hasData && (
+        {hasData && activePage && (
           <div role="tabpanel" className="p-5 max-w-[1400px] mx-auto">
-            {activeTab === 'fc' && fcData && <FlowCutsTab data={fcData} wide />}
-            {activeTab === 'sh' && shData && <FinalShortsTab data={shData} wide />}
+            <activePage.component data={data[activePageId]} wide />
           </div>
         )}
       </div>

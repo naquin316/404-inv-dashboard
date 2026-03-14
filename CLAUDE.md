@@ -31,62 +31,84 @@ Deployment is automated via GitHub Actions → Cloudflare Pages (wrangler). Push
 
 Both entry points render the same dashboard tabs (Flow Cuts / Final Shorts) but the dialog receives data via Office.js message passing (`messageChild`/`messageParent`), not by reading Excel directly.
 
+### Workbook Registry & Detection
+
+The app supports multiple Excel workbooks via a config-driven registry. On startup, `useWorkbookDetection` reads sheet names from the open workbook and matches against `src/config/registry.ts` to determine which pages to show. If no workbook matches, a `LandingPage` is displayed.
+
+**Adding a new workbook** requires only 3 steps:
+1. Write a loader function in `src/data/loaders.ts`
+2. Create a tab component in `src/components/dashboard/`
+3. Add an entry to `workbookRegistry` in `src/config/registry.ts`
+
+No changes to App, Sidebar, or hooks needed.
+
 ### Data Flow
 
 ```
 Excel Workbook (source of truth)
-  → useExcelData hook (parses "Flow Cuts" and "Final Short Tracker" sheets every 30s)
-  → App.tsx renders FlowCutsTab or FinalShortsTab
-  → useDialog sends data to pop-out dialog via Office.js messaging
-  → DialogApp.tsx renders same tabs with received data
+  → useWorkbookDetection (reads sheet names, matches against workbookRegistry)
+  → useExcelData(availablePages) — calls each page's dataLoader, returns Record<string, any>
+  → App.tsx renders Sidebar + active page component
+  → useDialog sends Record<string, any> to pop-out dialog via Office.js messaging
+  → DialogApp.tsx infers workbook from data keys, renders same sidebar + pages
 ```
+
+### Key Layers
+
+- **`src/config/registry.ts`** — Declarative `workbookRegistry: WorkbookDefinition[]` mapping workbooks → pages (id, label, icon, sheet name, component, dataLoader)
+- **`src/data/loaders.ts`** — Pure async sheet parsers (`loadFlowCuts`, `loadShorts`). No hooks or state — take `ctx`, return data.
+- **`src/hooks/useWorkbookDetection.ts`** — Reads sheet names on Office.js ready, finds best-matching workbook from registry, returns `WorkbookContext`
+- **`src/hooks/useExcelData.ts`** — Accepts `PageDefinition[]`, loops over pages calling each `dataLoader(ctx)`, returns `Record<string, any>` keyed by page id. Auto-refreshes every 30s.
+- **`src/hooks/useDialog.ts`** — Dialog lifecycle. `sendData` and `openDialog` accept `Record<string, any>` (generic, not hardcoded to specific data types).
+- **`src/components/ui/Sidebar.tsx`** — Taskpane: 40px icon rail that expands to ~176px on hover (CSS `group` + `transition-all`). Dialog: always-expanded ~160px sidebar. Uses icons from `PageDefinition`.
+- **`src/components/LandingPage.tsx`** — Shown when no workbook matches. Lists expected sheets and detected sheets.
 
 ### Sheet Parsing Details
 
-**Flow Cuts sheet** — parsed by scanning for known labels:
-- `findVal()` scans for "TOTAL ITEMS", "TOTAL SKUs", "TOTAL COST", "TRUE CUTS" → summary metrics
+**Flow Cuts sheet** — parsed by `loadFlowCuts` in `src/data/loaders.ts`:
+- `findVal()` scans for "Total Items Shorted", "Total Affected SKUs", "Total Cost Impact", "True Cuts (Confirmed Losses)" → summary metrics
 - "TOP COST DRIVERS" section → `TopDriver[]` (rank, pick, desc, cost, qty, total)
 - "TOP 5 SELECTORS" section → `TopSelector[]` (name, qty, pct)
 - "DAILY BREAKDOWN" section → `DailyEntry[]` (date, items, skus, cost, trueCuts per day)
 - TIME_BUCKET detection → timeline (half-hour buckets with qty and cost)
 
-**Final Short Tracker sheet** — flat table:
+**Final Short Tracker sheet** — parsed by `loadShorts` in `src/data/loaders.ts`:
 - Row 1 = headers, remaining rows = `ShortRecord[]`
 - Columns: RPT_DT, PRODUCT, DESCRIPTION, PARTNER, FINAL_SHORTS, COST, JobTitle
 
 **Excel serial dates:** `new Date((serial - 25569) * 86400000)`. Time extraction: `serial % 1 * 24 * 60` for minutes.
 
-### Key Custom Hooks
-
-- **`useExcelData`** — Office.js initialization, sheet parsing, auto-refresh (30s interval), status/error state. This is the core data layer.
-- **`useDialog`** — Dialog lifecycle (open/close), message passing between taskpane and dialog, ready-state tracking.
-
 ### Component Tree
 
 ```
 App.tsx (TaskPane)
+├── useWorkbookDetection() → WorkbookContext
+├── useExcelData(availablePages) → Record<string, any>
+├── Sidebar (icon rail, workbook icon + page icons)
 ├── StatusBar (title, commit SHA badge, status dot, pop-out button, refresh button)
-├── Tab Switcher (Flow Cuts | Final Shorts)
-├── FlowCutsTab
-│   ├── KpiCard × 4 (items, SKUs, cost, true cuts)
-│   ├── Card: Top Cost Drivers (table + horizontal BarChart)
-│   ├── Card: Top 5 Selectors (table)
-│   ├── Card: Daily Breakdown (ComposedChart — bars + line)
-│   └── Card: Timeline (ComposedChart — bars + line by time bucket)
-└── FinalShortsTab
-    ├── KpiCard × 3 (total shorts, total cost, unique products)
-    ├── Card: By Team (BarChart)
-    ├── Card: By Partner (horizontal BarChart)
-    └── Card: Data Table (searchable, scrollable)
+└── Active page component with data[activePageId]
+    ├── FlowCutsTab
+    │   ├── KpiCard × 4 (items, SKUs, cost, true cuts)
+    │   ├── Card: Top Cost Drivers (table + horizontal BarChart)
+    │   ├── Card: Top 5 Selectors (table)
+    │   ├── Card: Daily Breakdown (ComposedChart — bars + line)
+    │   └── Card: Timeline (ComposedChart — bars + line by time bucket)
+    └── FinalShortsTab
+        ├── KpiCard × 3 (total shorts, total cost, unique products)
+        ├── Card: By Team (BarChart)
+        ├── Card: By Partner (horizontal BarChart)
+        └── Card: Data Table (searchable, scrollable)
 
-DialogApp.tsx (Pop-Out) — same tabs with wide=true for expanded layouts
+DialogApp.tsx (Pop-Out) — same pages with wide=true, always-expanded sidebar
+LandingPage — fallback when no workbook matches
 ```
 
 ### Component Layers
 
-- **`src/components/ui/`** — Reusable primitives (Card, KpiCard, StatusBar)
+- **`src/components/ui/`** — Reusable primitives (Card, KpiCard, StatusBar, Sidebar)
 - **`src/components/dashboard/`** — Feature components (FlowCutsTab, FinalShortsTab) that accept data props and render KPIs, charts, tables
-- **`src/types/index.ts`** — All TypeScript interfaces (`FlowCutsData`, `ShortRecord`, `StatusState`, etc.)
+- **`src/components/LandingPage.tsx`** — Fallback for unrecognized workbooks
+- **`src/types/index.ts`** — All TypeScript interfaces (`FlowCutsData`, `ShortRecord`, `StatusState`, `PageDefinition`, `WorkbookDefinition`, `WorkbookContext`, etc.)
 - **`src/lib/utils.ts`** — Formatting helpers (`fmt$`, `fmtN`, `fmtPct`, `fmtDate`, `cn`)
 
 ### Styling
@@ -113,6 +135,7 @@ The Office Add-in manifest points to `/taskpane.html`, but Vite outputs `/index.
 - **30-second polling over Office.js events:** `onChanged` fires on every cell edit, too noisy. Polling is simple and predictable.
 - **Cloudflare over Azure/GitHub Pages:** Already had account, free tier, natural path to Workers + D1 for server-side features later.
 - **Dark theme only:** Creates visual separation from Excel's white background, reduces eye strain during shifts.
+- **Workbook registry over hardcoded tabs:** Config-driven `workbookRegistry` in `src/config/registry.ts` allows adding new workbook support without touching App, Sidebar, or hooks. Detection via sheet name matching.
 
 ## Known Constraints
 
@@ -128,7 +151,7 @@ React 19, TypeScript 5.9 (strict), Vite 8, Tailwind CSS 4, Recharts 3.8, lucide-
 ## Notes
 
 - `.npmrc` sets `legacy-peer-deps=true` for Vite 8 peer dependency compatibility
-- No React Router — tab switching is local state (`useState`)
+- No React Router — page switching is local state (`useState`), pages are defined in the workbook registry
 - No external APIs or database — Excel workbook is the sole data source
 - Path alias: `@/` maps to `src/`
 - Commit SHA displays as clickable badge in status bar linking to GitHub commit

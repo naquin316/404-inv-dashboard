@@ -51,3 +51,25 @@ export interface ShortRecord {
 }
 
 export type StatusState = 'ok' | 'loading' | 'err' | 'waiting'
+
+export interface PageDefinition {
+  id: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  sheet: string
+  component: React.ComponentType<{ data: any; wide?: boolean }>
+  dataLoader: (ctx: any) => Promise<any>
+}
+
+export interface WorkbookDefinition {
+  id: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  pages: PageDefinition[]
+}
+
+export interface WorkbookContext {
+  workbook: WorkbookDefinition | null
+  availablePages: PageDefinition[]
+  allSheetNames: string[]
+}

@@ -1,63 +1,85 @@
-interface Tab {
-  id: string
-  label: string
-}
+import type { PageDefinition, WorkbookDefinition } from '../../types'
 
 interface SidebarProps {
-  activeTab: string
-  onTabChange: (id: string) => void
-  tabs: Tab[]
+  workbook: WorkbookDefinition
+  pages: PageDefinition[]
+  activePageId: string
+  onPageChange: (id: string) => void
   isTaskPane: boolean
 }
 
-export function Sidebar({ activeTab, onTabChange, tabs, isTaskPane }: SidebarProps) {
-  if (tabs.length === 0) return null
+export function Sidebar({ workbook, pages, activePageId, onPageChange, isTaskPane }: SidebarProps) {
+  if (pages.length === 0) return null
 
-  // Taskpane: horizontal strip
+  const WbIcon = workbook.icon
+
+  // Taskpane: collapsible icon rail — 40px collapsed, expands on hover
   if (isTaskPane) {
     return (
-      <div role="tablist" className="flex gap-0 px-4 bg-card border-b border-border no-print">
-        {tabs.map(t => (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={activeTab === t.id}
-            onClick={() => onTabChange(t.id)}
-            className={`px-4 py-2 text-[11px] font-heading uppercase tracking-wider cursor-pointer transition-colors border-b-2 ${
-              activeTab === t.id
-                ? 'text-accent-teal border-accent-teal bg-card-hover'
-                : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-card-hover'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="group fixed left-0 top-0 h-full z-40 w-10 hover:w-44 transition-all duration-200 bg-sidebar border-r border-border flex flex-col no-print">
+        <div className="flex items-center gap-2 px-2.5 py-3 border-b border-border min-h-[44px]">
+          <WbIcon className="w-5 h-5 text-accent-red shrink-0" />
+          <span className="font-display text-accent-red text-xs tracking-wider whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            {workbook.label}
+          </span>
+        </div>
+        <nav role="tablist" className="flex flex-col py-2">
+          {pages.map(p => {
+            const Icon = p.icon
+            const active = activePageId === p.id
+            return (
+              <button
+                key={p.id}
+                role="tab"
+                aria-selected={active}
+                aria-label={p.label}
+                onClick={() => onPageChange(p.id)}
+                className={`flex items-center gap-2 px-2.5 py-2.5 cursor-pointer transition-colors border-l-[3px] ${
+                  active
+                    ? 'text-text-primary border-accent-teal bg-card-hover'
+                    : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-card-hover/50'
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span className="text-[11px] font-heading uppercase tracking-wider whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  {p.label}
+                </span>
+              </button>
+            )
+          })}
+        </nav>
       </div>
     )
   }
 
-  // Dialog: vertical sidebar
+  // Dialog: always-expanded sidebar
   return (
     <div className="w-40 min-h-screen bg-sidebar border-r border-border flex flex-col shrink-0 no-print">
-      <div className="px-4 py-4 border-b border-border">
-        <span className="font-display text-accent-red text-sm tracking-wider">HEB 404</span>
+      <div className="flex items-center gap-2 px-4 py-4 border-b border-border">
+        <WbIcon className="w-5 h-5 text-accent-red shrink-0" />
+        <span className="font-display text-accent-red text-sm tracking-wider">{workbook.label}</span>
       </div>
       <nav role="tablist" className="flex flex-col py-2">
-        {tabs.map(t => (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={activeTab === t.id}
-            onClick={() => onTabChange(t.id)}
-            className={`text-left px-4 py-2.5 text-[11px] font-heading uppercase tracking-wider cursor-pointer transition-colors border-l-[3px] ${
-              activeTab === t.id
-                ? 'text-text-primary border-accent-teal bg-card-hover'
-                : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-card-hover/50'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+        {pages.map(p => {
+          const Icon = p.icon
+          const active = activePageId === p.id
+          return (
+            <button
+              key={p.id}
+              role="tab"
+              aria-selected={active}
+              onClick={() => onPageChange(p.id)}
+              className={`flex items-center gap-2 text-left px-4 py-2.5 cursor-pointer transition-colors border-l-[3px] ${
+                active
+                  ? 'text-text-primary border-accent-teal bg-card-hover'
+                  : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-card-hover/50'
+              }`}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              <span className="text-[11px] font-heading uppercase tracking-wider">{p.label}</span>
+            </button>
+          )
+        })}
       </nav>
     </div>
   )
