@@ -73,3 +73,54 @@ export interface WorkbookContext {
   availablePages: PageDefinition[]
   allSheetNames: string[]
 }
+
+export interface CountRecord {
+  countTime: Date
+  countHour: number
+  locId: string
+  prodId: number
+  description: string
+  counterId: string
+  counterName: string
+  systemQty: number
+  unitVar: number
+  caseVar: number
+  dollarVar: number
+  minutesOpen: number
+  status: 'OPEN' | 'CORRECTED'
+}
+
+export interface CounterSummary {
+  name: string
+  totalCounts: number
+  openCounts: number
+  absDollarVar: number
+  avgMinutesOpen: number
+}
+
+export interface TopVarianceItem {
+  description: string
+  absDollarVar: number
+  totalUnitVar: number
+  recordCount: number
+}
+
+export interface HourBucket {
+  hour: number
+  label: string
+  count: number
+  absDollarVar: number
+}
+
+export interface CountErrorData {
+  records: CountRecord[]
+  totalCounts: number
+  openCounts: number
+  correctedCounts: number
+  netDollarVar: number
+  totalAbsDollarVar: number
+  avgMinutesOpen: number
+  byCounter: CounterSummary[]
+  topVarianceItems: TopVarianceItem[]
+  byHour: HourBucket[]
+}

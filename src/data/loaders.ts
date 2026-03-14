@@ -1,4 +1,4 @@
-import type { FlowCutsData, ShortRecord } from '../types'
+import type { FlowCutsData, ShortRecord, CountRecord, CountErrorData, CounterSummary, TopVarianceItem, HourBucket } from '../types'
 
 export async function loadFlowCuts(ctx: any): Promise<FlowCutsData | null> {
   const ws = ctx.workbook.worksheets.getItem('Flow Cuts')
@@ -146,4 +146,112 @@ export async function loadShorts(ctx: any): Promise<ShortRecord[] | null> {
     if (hasData && (row['PARTNER'] || row['PRODUCT'])) data.push(row)
   }
   return data
+}
+
+export async function loadCountErrors(ctx: any): Promise<CountErrorData | null> {
+  const ws = ctx.workbook.worksheets.getItem('LiveShiftErrors')
+  const used = ws.getUsedRange()
+  used.load('values')
+  await ctx.sync()
+  const a = used.values
+  if (!a || a.length < 2) return null
+
+  const records: CountRecord[] = []
+  for (let r = 1; r < a.length; r++) {
+    const sysQty = Number(a[r][6]) || 0
+    if (!sysQty) continue
+
+    const serial = Number(a[r][0]) || 0
+    const countTime = new Date((serial - 25569) * 86400000)
+    const countHour = Math.round((serial % 1) * 24) % 24
+    const statusRaw = String(a[r][11] || '').trim().toUpperCase()
+
+    records.push({
+      countTime,
+      countHour,
+      locId: String(a[r][1] || '').trim(),
+      prodId: Number(a[r][2]) || 0,
+      description: String(a[r][3] || '').trim(),
+      counterId: String(a[r][4] || '').trim(),
+      counterName: String(a[r][5] || '').replace(/^\S+\s+/, '').trim(),
+      systemQty: sysQty,
+      unitVar: Number(a[r][7]) || 0,
+      caseVar: Number(a[r][8]) || 0,
+      dollarVar: Number(a[r][9]) || 0,
+      minutesOpen: Number(a[r][10]) || 0,
+      status: statusRaw === 'CORRECTED' ? 'CORRECTED' : 'OPEN',
+    })
+  }
+
+  if (records.length === 0) return null
+
+  const openRecords = records.filter(r => r.status === 'OPEN')
+  const totalCounts = records.length
+  const openCounts = openRecords.length
+  const correctedCounts = totalCounts - openCounts
+  const netDollarVar = records.reduce((s, r) => s + r.dollarVar, 0)
+  const totalAbsDollarVar = records.reduce((s, r) => s + Math.abs(r.dollarVar), 0)
+  const avgMinutesOpen = openCounts > 0
+    ? openRecords.reduce((s, r) => s + r.minutesOpen, 0) / openCounts
+    : 0
+
+  // By counter
+  const counterMap: Record<string, CounterSummary> = {}
+  for (const r of records) {
+    if (!counterMap[r.counterName]) {
+      counterMap[r.counterName] = { name: r.counterName, totalCounts: 0, openCounts: 0, absDollarVar: 0, avgMinutesOpen: 0 }
+    }
+    const c = counterMap[r.counterName]
+    c.totalCounts++
+    if (r.status === 'OPEN') c.openCounts++
+    c.absDollarVar += Math.abs(r.dollarVar)
+  }
+  for (const c of Object.values(counterMap)) {
+    const counterOpen = records.filter(r => r.counterName === c.name && r.status === 'OPEN')
+    c.avgMinutesOpen = counterOpen.length > 0
+      ? counterOpen.reduce((s, r) => s + r.minutesOpen, 0) / counterOpen.length
+      : 0
+  }
+  const byCounter = Object.values(counterMap).sort((a, b) => b.absDollarVar - a.absDollarVar)
+
+  // Top variance items
+  const prodMap: Record<string, TopVarianceItem> = {}
+  for (const r of records) {
+    if (!prodMap[r.description]) {
+      prodMap[r.description] = { description: r.description, absDollarVar: 0, totalUnitVar: 0, recordCount: 0 }
+    }
+    const p = prodMap[r.description]
+    p.absDollarVar += Math.abs(r.dollarVar)
+    p.totalUnitVar += r.unitVar
+    p.recordCount++
+  }
+  const topVarianceItems = Object.values(prodMap)
+    .sort((a, b) => b.absDollarVar - a.absDollarVar)
+    .slice(0, 10)
+
+  // By hour
+  const hourMap: Record<number, HourBucket> = {}
+  for (const r of records) {
+    if (!hourMap[r.countHour]) {
+      const h = r.countHour
+      const ampm = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`
+      hourMap[r.countHour] = { hour: h, label: ampm, count: 0, absDollarVar: 0 }
+    }
+    hourMap[r.countHour].count++
+    hourMap[r.countHour].absDollarVar += Math.abs(r.dollarVar)
+  }
+  const byHour = Object.values(hourMap).sort((a, b) => a.hour - b.hour)
+
+  return {
+    records: records.sort((a, b) => b.countTime.getTime() - a.countTime.getTime()),
+    totalCounts,
+    openCounts,
+    correctedCounts,
+    netDollarVar,
+    totalAbsDollarVar,
+    avgMinutesOpen,
+    byCounter,
+    topVarianceItems,
+    byHour,
+  }
 }

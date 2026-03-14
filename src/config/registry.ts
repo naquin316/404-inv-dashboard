@@ -1,7 +1,8 @@
-import { Scissors, AlertTriangle, BarChart3 } from 'lucide-react'
+import { Scissors, AlertTriangle, BarChart3, ClipboardCheck } from 'lucide-react'
 import { FlowCutsTab } from '../components/dashboard/FlowCutsTab'
 import { FinalShortsTab } from '../components/dashboard/FinalShortsTab'
-import { loadFlowCuts, loadShorts } from '../data/loaders'
+import { CountErrorsTab } from '../components/dashboard/CountErrorsTab'
+import { loadFlowCuts, loadShorts, loadCountErrors } from '../data/loaders'
 import type { WorkbookDefinition } from '../types'
 
 export const workbookRegistry: WorkbookDefinition[] = [
@@ -25,6 +26,21 @@ export const workbookRegistry: WorkbookDefinition[] = [
         sheet: 'Final Short Tracker',
         component: FinalShortsTab,
         dataLoader: loadShorts,
+      },
+    ],
+  },
+  {
+    id: 'count-errors',
+    label: 'Count Errors',
+    icon: ClipboardCheck,
+    pages: [
+      {
+        id: 'ce',
+        label: 'Inventory Counts',
+        icon: ClipboardCheck,
+        sheet: 'LiveShiftErrors',
+        component: CountErrorsTab,
+        dataLoader: loadCountErrors,
       },
     ],
   },
