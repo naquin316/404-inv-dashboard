@@ -35,10 +35,11 @@ export default function App() {
         <StatusBar
           status={{ state: 'waiting', text: 'No workbook detected' }}
           onRefresh={() => window.location.reload()}
+          onPopOut={() => openDialog({})}
           isReady={false}
           isTaskPane={true}
         />
-        <LandingPage sheetNames={detection.allSheetNames} />
+        <LandingPage sheetNames={detection.allSheetNames} onPopOut={() => openDialog({})} />
       </div>
     )
   }

@@ -1,11 +1,12 @@
-import { FileQuestion } from 'lucide-react'
+import { FileQuestion, ExternalLink } from 'lucide-react'
 import { workbookRegistry } from '../config/registry'
 
 interface LandingPageProps {
   sheetNames: string[]
+  onPopOut?: () => void
 }
 
-export function LandingPage({ sheetNames }: LandingPageProps) {
+export function LandingPage({ sheetNames, onPopOut }: LandingPageProps) {
   return (
     <div className="flex items-center justify-center min-h-[80vh] px-6">
       <div className="text-center max-w-md">
@@ -31,6 +32,15 @@ export function LandingPage({ sheetNames }: LandingPageProps) {
               {sheetNames.join(', ')}
             </div>
           </div>
+        )}
+        {onPopOut && (
+          <button
+            onClick={onPopOut}
+            className="mt-6 inline-flex items-center gap-1.5 px-4 py-2 rounded-none border border-border text-text-secondary text-xs hover:border-accent-teal hover:text-accent-teal transition-colors cursor-pointer"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            Pop Out
+          </button>
         )}
       </div>
     </div>

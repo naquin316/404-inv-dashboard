@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { StatusBar } from './components/ui/StatusBar'
 import { Sidebar } from './components/ui/Sidebar'
+import { LandingPage } from './components/LandingPage'
 import { workbookRegistry } from './config/registry'
 import type { StatusState } from './types'
 
@@ -82,11 +83,7 @@ export default function DialogApp() {
         />
 
         {!hasData && (
-          <div className="text-center py-16 px-5">
-            <div className="text-5xl mb-3 opacity-60">📊</div>
-            <h2 className="text-xl font-heading mb-2">Waiting for data from Excel...</h2>
-            <p className="text-text-secondary text-sm">The dashboard will appear once the task pane sends data.</p>
-          </div>
+          <LandingPage sheetNames={[]} />
         )}
 
         {hasData && activePage && (
