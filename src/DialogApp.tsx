@@ -58,7 +58,7 @@ export default function DialogApp() {
       <StatusBar
         status={status}
         onRefresh={requestRefresh}
-        isReady={hasData !== null}
+        isReady={!!hasData}
         isTaskPane={false}
       />
 
@@ -67,6 +67,7 @@ export default function DialogApp() {
         <div className="flex justify-end px-5 py-1 no-print">
           <button
             onClick={printDashboard}
+            aria-label="Print dashboard"
             className="px-3 py-1 rounded-md border border-border text-text-secondary text-[10px] hover:border-accent-blue hover:text-accent-blue transition-colors cursor-pointer"
           >
             Print
@@ -84,10 +85,12 @@ export default function DialogApp() {
 
       {hasData && (
         <>
-          <div className="flex gap-1 px-5 py-2 bg-card border-b border-border no-print">
+          <div role="tablist" className="flex flex-wrap gap-1 px-5 py-2 bg-card border-b border-border no-print">
             {tabs.map(t => (
               <button
                 key={t.id}
+                role="tab"
+                aria-selected={activeTab === t.id}
                 onClick={() => setActiveTab(t.id)}
                 className={`px-4 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors border ${
                   activeTab === t.id
@@ -100,7 +103,7 @@ export default function DialogApp() {
             ))}
           </div>
 
-          <div className="p-5 max-w-[1400px] mx-auto">
+          <div role="tabpanel" className="p-5 max-w-[1400px] mx-auto">
             {activeTab === 'fc' && fcData && <FlowCutsTab data={fcData} wide />}
             {activeTab === 'sh' && shData && <FinalShortsTab data={shData} wide />}
           </div>

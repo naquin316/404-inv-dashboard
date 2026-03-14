@@ -50,10 +50,12 @@ export default function App() {
       {hasData && (
         <>
           {/* Tab Bar */}
-          <div className="flex gap-1 px-5 py-2 bg-card border-b border-border no-print">
+          <div role="tablist" className="flex flex-wrap gap-1 px-5 py-2 bg-card border-b border-border no-print">
             {tabs.map(t => (
               <button
                 key={t.id}
+                role="tab"
+                aria-selected={activeTab === t.id}
                 onClick={() => setActiveTab(t.id)}
                 className={`px-4 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors border ${
                   activeTab === t.id
@@ -67,7 +69,7 @@ export default function App() {
           </div>
 
           {/* Content */}
-          <div className="p-4">
+          <div role="tabpanel" className="p-4">
             {activeTab === 'fc' && fcData && <FlowCutsTab data={fcData} />}
             {activeTab === 'sh' && shData && <FinalShortsTab data={shData} />}
           </div>

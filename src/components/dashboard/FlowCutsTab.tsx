@@ -9,15 +9,26 @@ import type { FlowCutsData } from '../../types'
 
 const COLORS = ['#4e8cff', '#34d399', '#f87171', '#fbbf24', '#a78bfa', '#22d3ee', '#f472b6', '#818cf8']
 
+const CHART_GRID = 'var(--color-border)'
+const CHART_TICK = { fill: 'var(--color-text-secondary)', fontSize: 10 }
+const CHART_TICK_SM = { fill: 'var(--color-text-secondary)', fontSize: 9 }
+const CHART_TOOLTIP_STYLE = {
+  background: 'var(--color-card)',
+  border: '1px solid var(--color-border)',
+  borderRadius: 8,
+  fontSize: 12,
+}
+const CHART_LABEL_STYLE = { color: 'var(--color-text-primary)' }
+
 interface Props {
   data: FlowCutsData
   wide?: boolean
 }
 
 export function FlowCutsTab({ data: d, wide = false }: Props) {
-  const gridCols = wide ? 'grid-cols-4' : 'grid-cols-2'
-  const summary = d.summary as Record<string, any>
+  const summary = d.summary as Record<string, unknown>
   const tlKeys = Object.keys(d.timeline).sort()
+  const chartHeight = wide ? 280 : 200
 
   const driverChartData = d.topDrivers.map(r => ({
     name: r.desc.substring(0, wide ? 26 : 20),
@@ -40,11 +51,11 @@ export function FlowCutsTab({ data: d, wide = false }: Props) {
   return (
     <div className="space-y-4">
       {/* KPIs */}
-      <div className={`grid ${gridCols} gap-3`}>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <KpiCard label="Items Shorted" value={fmtN(d.totalItems)} subtitle="Today" color="red" />
-        <KpiCard label="Affected SKUs" value={fmtN(d.totalSKUs)} color="amber" />
-        <KpiCard label="Cost Impact" value={fmt$(d.totalCost)} color="blue" />
-        <KpiCard label="True Cuts" value={fmt$(d.trueCuts)} color="green" />
+        <KpiCard label="Affected SKUs" value={fmtN(d.totalSKUs)} subtitle="Today" color="amber" />
+        <KpiCard label="Cost Impact" value={fmt$(d.totalCost)} subtitle="Today" color="blue" />
+        <KpiCard label="True Cuts" value={fmt$(d.trueCuts)} subtitle="Today" color="green" />
       </div>
 
       {/* Period Summary */}
@@ -52,11 +63,11 @@ export function FlowCutsTab({ data: d, wide = false }: Props) {
         <div className="grid grid-cols-2 gap-3">
           <KpiCard
             label="Period Items"
-            value={fmtN(Number(summary['Total Items Shorted']) || 0)}
-            subtitle={`${summary['Earliest Date'] || ''} — ${summary['Latest Date'] || ''}`}
+            value={fmtN(Number(summary['Total Items Shorted'] as number) || 0)}
+            subtitle={`${(summary['Earliest Date'] as string) || ''} — ${(summary['Latest Date'] as string) || ''}`}
             color="purple"
           />
-          <KpiCard label="Period Cost" value={fmt$(Number(summary['Total Cost Impact']) || 0)} color="cyan" />
+          <KpiCard label="Period Cost" value={fmt$(Number(summary['Total Cost Impact'] as number) || 0)} color="cyan" />
         </div>
       )}
 
@@ -65,7 +76,7 @@ export function FlowCutsTab({ data: d, wide = false }: Props) {
         <div className={wide ? 'grid grid-cols-2 gap-4' : 'space-y-4'}>
           <Card title="Top Cost Drivers" badge="Today">
             <div className="overflow-auto max-h-[400px]">
-              <table className="w-full text-xs">
+              <table className="w-full text-xs" aria-label="Top Cost Drivers">
                 <thead>
                   <tr className="border-b border-border">
                     <th className="text-left p-2 text-[10px] uppercase tracking-wider text-text-muted">#</th>
@@ -100,15 +111,15 @@ export function FlowCutsTab({ data: d, wide = false }: Props) {
           </Card>
 
           <Card title="Cost Drivers">
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer width="100%" height={chartHeight}>
               <BarChart data={driverChartData} layout="vertical" margin={{ left: 8, right: 16, top: 4, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2a2e3d" horizontal={false} />
-                <XAxis type="number" tick={{ fill: '#9aa0b0', fontSize: 10 }} tickFormatter={v => '$' + v} axisLine={false} />
-                <YAxis type="category" dataKey="name" tick={{ fill: '#9aa0b0', fontSize: 9 }} width={wide ? 140 : 100} axisLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} horizontal={false} />
+                <XAxis type="number" tick={CHART_TICK} tickFormatter={v => '$' + v} axisLine={false} />
+                <YAxis type="category" dataKey="name" tick={CHART_TICK_SM} width={wide ? 140 : 100} axisLine={false} />
                 <Tooltip
                   formatter={(v: any) => [fmt$(Number(v)), 'Cost']}
-                  contentStyle={{ background: '#1a1d27', border: '1px solid #2a2e3d', borderRadius: 8, fontSize: 12 }}
-                  labelStyle={{ color: '#e8eaed' }}
+                  contentStyle={CHART_TOOLTIP_STYLE}
+                  labelStyle={CHART_LABEL_STYLE}
                 />
                 <Bar dataKey="cost" radius={[0, 4, 4, 0]} barSize={18}>
                   {driverChartData.map((_entry, i) => (
@@ -124,7 +135,7 @@ export function FlowCutsTab({ data: d, wide = false }: Props) {
       {/* Top Selectors */}
       {d.topSelectors.length > 0 && (
         <Card title="Top Selectors by Qty" badge="Today">
-          <table className="w-full text-xs">
+          <table className="w-full text-xs" aria-label="Top Selectors by Quantity">
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left p-2 text-[10px] uppercase tracking-wider text-text-muted">#</th>
@@ -159,15 +170,15 @@ export function FlowCutsTab({ data: d, wide = false }: Props) {
         <div className={wide ? 'grid grid-cols-2 gap-4' : 'space-y-4'}>
           {dailyChartData.length > 0 && (
             <Card title="Daily Breakdown">
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={chartHeight}>
                 <ComposedChart data={dailyChartData} margin={{ left: 0, right: 8, top: 4, bottom: 4 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2a2e3d" />
-                  <XAxis dataKey="date" tick={{ fill: '#9aa0b0', fontSize: 10 }} axisLine={false} />
-                  <YAxis yAxisId="left" tick={{ fill: '#9aa0b0', fontSize: 10 }} tickFormatter={v => '$' + v} axisLine={false} />
-                  <YAxis yAxisId="right" orientation="right" tick={{ fill: '#9aa0b0', fontSize: 10 }} axisLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
+                  <XAxis dataKey="date" tick={CHART_TICK} axisLine={false} />
+                  <YAxis yAxisId="left" tick={CHART_TICK} tickFormatter={v => '$' + v} axisLine={false} />
+                  <YAxis yAxisId="right" orientation="right" tick={CHART_TICK} axisLine={false} />
                   <Tooltip
-                    contentStyle={{ background: '#1a1d27', border: '1px solid #2a2e3d', borderRadius: 8, fontSize: 12 }}
-                    labelStyle={{ color: '#e8eaed' }}
+                    contentStyle={CHART_TOOLTIP_STYLE}
+                    labelStyle={CHART_LABEL_STYLE}
                     formatter={(v: any, name: any) => [name === 'items' ? fmtN(Number(v)) : fmt$(Number(v)), name]}
                   />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -181,20 +192,20 @@ export function FlowCutsTab({ data: d, wide = false }: Props) {
 
           {timelineData.length > 0 && (
             <Card title="Flow Short Timeline — Qty & Cost" badge={`${timelineData.length} intervals`}>
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={chartHeight}>
                 <ComposedChart data={timelineData} margin={{ left: 0, right: 8, top: 4, bottom: 4 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2a2e3d" />
-                  <XAxis dataKey="time" tick={{ fill: '#9aa0b0', fontSize: 10 }} axisLine={false} />
-                  <YAxis yAxisId="left" tick={{ fill: '#9aa0b0', fontSize: 10 }} axisLine={false} />
-                  <YAxis yAxisId="right" orientation="right" tick={{ fill: '#9aa0b0', fontSize: 10 }} tickFormatter={v => '$' + fmtN(v)} axisLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
+                  <XAxis dataKey="time" tick={CHART_TICK} axisLine={false} />
+                  <YAxis yAxisId="left" tick={CHART_TICK} axisLine={false} />
+                  <YAxis yAxisId="right" orientation="right" tick={CHART_TICK} tickFormatter={v => '$' + fmtN(v)} axisLine={false} />
                   <Tooltip
-                    contentStyle={{ background: '#1a1d27', border: '1px solid #2a2e3d', borderRadius: 8, fontSize: 12 }}
-                    labelStyle={{ color: '#e8eaed' }}
+                    contentStyle={CHART_TOOLTIP_STYLE}
+                    labelStyle={CHART_LABEL_STYLE}
                     formatter={(v: any, name: any) => [name === 'cost' ? fmt$(Number(v)) : fmtN(Number(v)), name]}
                   />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar yAxisId="left" dataKey="qty" fill="#3b6cb4" stroke="#2c5491" strokeWidth={1} radius={[3, 3, 0, 0]} name="Qty" />
-                  <Line yAxisId="right" dataKey="cost" stroke="#8b2020" strokeWidth={2} dot={{ fill: '#8b2020', r: 4, strokeWidth: 0 }} name="Cost" />
+                  <Bar yAxisId="left" dataKey="qty" fill="#4e8cff60" stroke="#4e8cff" strokeWidth={1} radius={[3, 3, 0, 0]} name="Qty" />
+                  <Line yAxisId="right" dataKey="cost" stroke="#f87171" strokeWidth={2} dot={{ fill: '#f87171', r: 4, strokeWidth: 0 }} name="Cost" />
                 </ComposedChart>
               </ResponsiveContainer>
             </Card>

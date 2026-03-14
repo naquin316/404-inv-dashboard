@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 
 interface CardProps {
   title: string
@@ -7,9 +8,9 @@ interface CardProps {
   className?: string
 }
 
-export function Card({ title, badge, children, className = '' }: CardProps) {
+export function Card({ title, badge, children, className }: CardProps) {
   return (
-    <div className={`rounded-xl border border-border bg-card p-4 ${className}`}>
+    <div className={cn('rounded-xl border border-border bg-card p-4', className)}>
       <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-text-primary">
         {title}
         {badge && (
