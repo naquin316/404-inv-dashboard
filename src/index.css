@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0f1117;
+  --color-card: #1a1d27;
+  --color-card-hover: #222636;
+  --color-border: #2a2e3d;
+  --color-text-primary: #e8eaed;
+  --color-text-secondary: #9aa0b0;
+  --color-text-muted: #666c80;
+  --color-accent-blue: #4e8cff;
+  --color-accent-green: #34d399;
+  --color-accent-red: #f87171;
+  --color-accent-amber: #fbbf24;
+  --color-accent-purple: #a78bfa;
+  --color-accent-cyan: #22d3ee;
+  --color-accent-pink: #f472b6;
+  --color-accent-indigo: #818cf8;
+}
+
+body {
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  margin: 0;
+  min-height: 100vh;
+  font-size: 14px;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+
+/* Recharts overrides */
+.recharts-tooltip-wrapper { outline: none !important; }
+.recharts-default-tooltip {
+  background: var(--color-card) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+}
+.recharts-tooltip-label { color: var(--color-text-primary) !important; font-weight: 600 !important; margin-bottom: 4px !important; }
+.recharts-tooltip-item { color: var(--color-text-secondary) !important; font-size: 12px !important; }
+
+/* Print styles */
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { background: #fff !important; color: #1a1a1a !important; font-size: 11px; }
+  .no-print { display: none !important; }
+  .print-show { display: block !important; }
+}
