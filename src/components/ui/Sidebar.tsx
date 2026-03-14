@@ -1,4 +1,5 @@
 import type { PageDefinition, WorkbookDefinition } from '../../types'
+import raptorLogo from '../../assets/raptor.jpg'
 
 interface SidebarProps {
   workbook: WorkbookDefinition
@@ -8,19 +9,17 @@ interface SidebarProps {
   isTaskPane: boolean
 }
 
-export function Sidebar({ workbook, pages, activePageId, onPageChange, isTaskPane }: SidebarProps) {
+export function Sidebar({ pages, activePageId, onPageChange, isTaskPane }: SidebarProps) {
   if (pages.length === 0) return null
-
-  const WbIcon = workbook.icon
 
   // Taskpane: collapsible icon rail — 40px collapsed, expands on hover
   if (isTaskPane) {
     return (
       <div className="group fixed left-0 top-0 h-full z-40 w-10 hover:w-44 transition-all duration-200 bg-sidebar border-r border-border flex flex-col no-print">
-        <div className="flex items-center gap-2 px-2.5 py-3 border-b border-border min-h-[44px]">
-          <WbIcon className="w-5 h-5 text-accent-red shrink-0" />
+        <div className="flex items-center gap-2 px-2 py-2 border-b border-border min-h-[44px]">
+          <img src={raptorLogo} alt="404" className="w-6 h-6 object-cover shrink-0" />
           <span className="font-display text-accent-red text-xs tracking-wider whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            {workbook.label}
+            404
           </span>
         </div>
         <nav role="tablist" className="flex flex-col py-2">
@@ -55,9 +54,9 @@ export function Sidebar({ workbook, pages, activePageId, onPageChange, isTaskPan
   // Dialog: always-expanded sidebar
   return (
     <div className="w-40 min-h-screen bg-sidebar border-r border-border flex flex-col shrink-0 no-print">
-      <div className="flex items-center gap-2 px-4 py-4 border-b border-border">
-        <WbIcon className="w-5 h-5 text-accent-red shrink-0" />
-        <span className="font-display text-accent-red text-sm tracking-wider">{workbook.label}</span>
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+        <img src={raptorLogo} alt="404" className="w-7 h-7 object-cover shrink-0" />
+        <span className="font-display text-accent-red text-sm tracking-wider">404</span>
       </div>
       <nav role="tablist" className="flex flex-col py-2">
         {pages.map(p => {
